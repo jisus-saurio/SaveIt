@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -9,27 +9,78 @@ import {
   ImageBackground,
   Image
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Svg, { Path } from 'react-native-svg';
 
-// Importar desde la carpeta assets en la raíz (fuera de src)
 const Fondo = require('../../assets/fondo.png');
 const Logo = require('../../assets/saveit.png');
 
-export default function SaveItApp() {
+export default function Home({ navigation }) {
   const [activeTab, setActiveTab] = useState('egresos');
-  const [activeBottomTab, setActiveBottomTab] = useState('home');
+  const [egresosData, setEgresosData] = useState([]);
+  const [ingresosData, setIngresosData] = useState([]);
+  const [fondoDisponible, setFondoDisponible] = useState(0);
 
-  const egresosData = [
-    { id: 1, categoria: 'Categoría', monto: -100.00 },
-    { id: 2, categoria: 'Categoría', monto: -100.00 },
-    { id: 3, categoria: 'Categoría', monto: -100.00 },
-  ];
+  // Cargar datos al iniciar
+  useEffect(() => {
+    loadData();
+  }, []);
 
-  const ingresosData = [
-    { id: 1, categoria: 'Categoría', monto: 100.00 },
-    { id: 2, categoria: 'Categoría', monto: 100.00 },
-    { id: 3, categoria: 'Categoría', monto: 100.00 },
-  ];
+  // Recargar datos cuando la pantalla recibe foco
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadData();
+    });
+    return unsubscribe;
+  }, [navigation]);
+
+  const loadData = async () => {
+    try {
+      // Cargar gastos
+      const savedGastos = await AsyncStorage.getItem('gastos');
+      if (savedGastos) {
+        const gastosArray = JSON.parse(savedGastos);
+        // Ordenar por timestamp más reciente y mostrar solo los últimos 5
+        gastosArray.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        setEgresosData(gastosArray.slice(0, 5));
+      } else {
+        setEgresosData([]);
+      }
+
+      // Cargar ingresos
+      const savedIngresos = await AsyncStorage.getItem('ingresos');
+      if (savedIngresos) {
+        const ingresosArray = JSON.parse(savedIngresos);
+        // Ordenar por timestamp más reciente y mostrar solo los últimos 5
+        ingresosArray.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        setIngresosData(ingresosArray.slice(0, 5));
+      } else {
+        setIngresosData([]);
+      }
+
+      // Calcular fondo disponible
+      calcularFondoDisponible(savedGastos, savedIngresos);
+    } catch (error) {
+      console.error('Error al cargar datos:', error);
+    }
+  };
+
+  const calcularFondoDisponible = (gastosString, ingresosString) => {
+    let totalGastos = 0;
+    let totalIngresos = 0;
+
+    if (gastosString) {
+      const gastos = JSON.parse(gastosString);
+      totalGastos = gastos.reduce((sum, gasto) => sum + parseFloat(gasto.monto || 0), 0);
+    }
+
+    if (ingresosString) {
+      const ingresos = JSON.parse(ingresosString);
+      totalIngresos = ingresos.reduce((sum, ingreso) => sum + parseFloat(ingreso.monto || 0), 0);
+    }
+
+    setFondoDisponible(totalIngresos - totalGastos);
+  };
 
   const currentData = activeTab === 'egresos' ? egresosData : ingresosData;
 
@@ -59,7 +110,9 @@ export default function SaveItApp() {
         <View style={styles.overlayGradient} />
         <View style={styles.balanceContent}>
           <Text style={styles.balanceLabel}>Fondo disponible</Text>
-          <Text style={styles.balanceAmount}>$00.00</Text>
+          <Text style={styles.balanceAmount}>
+            ${fondoDisponible.toFixed(2)}
+          </Text>
         </View>
 
         {/* Wave SVG */}
@@ -101,28 +154,56 @@ export default function SaveItApp() {
         contentContainerStyle={styles.transactionsContent}
         showsVerticalScrollIndicator={false}
       >
-        {currentData.map((item) => (
-          <View key={item.id} style={styles.transactionItem}>
-            <View style={styles.transactionLeft}>
-              <View style={styles.iconContainer}>
-                <Text style={styles.transactionIcon}>
-                  {activeTab === 'egresos' ? '↗' : '↘'}
-                </Text>
-              </View>
-              <Text style={styles.transactionCategory}>{item.categoria}</Text>
-            </View>
-            <Text style={[
-              styles.transactionAmount,
-              activeTab === 'egresos' ? styles.amountNegative : styles.amountPositive
-            ]}>
-              ${Math.abs(item.monto).toFixed(2)}
+        {currentData.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>
+              No hay {activeTab === 'egresos' ? 'gastos' : 'ingresos'} registrados
+            </Text>
+            <Text style={styles.emptySubtext}>
+              {activeTab === 'egresos' 
+                ? 'Presiona el botón + para agregar uno' 
+                : 'Ve a la sección de ingresos para agregar'}
             </Text>
           </View>
-        ))}
+        ) : (
+          <>
+            {currentData.map((item) => (
+              <View key={item.id} style={styles.transactionItem}>
+                <View style={styles.transactionLeft}>
+                  <View style={styles.iconContainer}>
+                    <Text style={styles.transactionIcon}>
+                      {item.icono || (activeTab === 'egresos' ? '↗' : '↘')}
+                    </Text>
+                  </View>
+                  <Text style={styles.transactionCategory}>{item.categoria}</Text>
+                </View>
+                <Text style={[
+                  styles.transactionAmount,
+                  activeTab === 'egresos' ? styles.amountNegative : styles.amountPositive
+                ]}>
+                  ${Math.abs(item.monto).toFixed(2)}
+                </Text>
+              </View>
+            ))}
+            
+            {/* Mostrar indicador si hay más items */}
+            {currentData.length === 5 && (
+              <TouchableOpacity 
+                style={styles.verMasButton}
+                onPress={() => navigation.navigate(activeTab === 'egresos' ? 'Gastos' : 'Ingresos')}
+              >
+                <Text style={styles.verMasText}>Ver todos →</Text>
+              </TouchableOpacity>
+            )}
+          </>
+        )}
       </ScrollView>
 
-      {/* Floating Add Button */}
-      <TouchableOpacity style={styles.floatingButton}>
+      {/* Floating Add Button - Visible en ambos tabs */}
+      <TouchableOpacity 
+        style={styles.floatingButton}
+        onPress={() => navigation.navigate('Calculadora', { tipo: activeTab })}
+      >
         <Text style={styles.floatingButtonText}>+</Text>
       </TouchableOpacity>
 
@@ -130,47 +211,30 @@ export default function SaveItApp() {
       <View style={styles.bottomNav}>
         <TouchableOpacity
           style={styles.navItem}
-          onPress={() => setActiveBottomTab('egresos')}
+          onPress={() => navigation.navigate('Gastos')}
         >
-          <Text style={[
-            styles.navIcon,
-            activeBottomTab === 'egresos' && styles.navIconActive
-          ]}>↗</Text>
-          <Text style={[
-            styles.navLabel,
-            activeBottomTab === 'egresos' && styles.navLabelActive
-          ]}>Egresos</Text>
+          <Text style={styles.navIcon}>↗</Text>
+          <Text style={styles.navLabel}>Egresos</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.navItemCenter}
-          onPress={() => setActiveBottomTab('home')}
+          onPress={() => navigation.navigate('Home')}
         >
-          <View style={[
-            styles.homeButton,
-            activeBottomTab === 'home' && styles.homeButtonActive
-          ]}>
+          <View style={styles.homeButton}>
             <Text style={styles.homeIcon}>🏠</Text>
           </View>
-          <Text style={[
-            styles.navLabel,
-            styles.navLabelHome,
-            activeBottomTab === 'home' && styles.navLabelActive
-          ]}>Home</Text>
+          <Text style={[styles.navLabel, styles.navLabelHome, styles.navLabelActive]}>
+            Home
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.navItem}
-          onPress={() => setActiveBottomTab('ingresos')}
+          onPress={() => navigation.navigate('Ingresos')}
         >
-          <Text style={[
-            styles.navIcon,
-            activeBottomTab === 'ingresos' && styles.navIconActive
-          ]}>↘</Text>
-          <Text style={[
-            styles.navLabel,
-            activeBottomTab === 'ingresos' && styles.navLabelActive
-          ]}>Ingresos</Text>
+          <Text style={styles.navIcon}>↘</Text>
+          <Text style={styles.navLabel}>Ingresos</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -207,8 +271,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 24,
     fontWeight: 'bold',
-    textAlign: 'center',
-    flex: 3,
   },
   menuIcon: {
     color: '#FFFFFF',
@@ -285,7 +347,24 @@ const styles = StyleSheet.create({
   },
   transactionsContent: {
     paddingTop: 20,
-    paddingBottom: 140,
+    paddingBottom: 180,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  emptyText: {
+    fontSize: 18,
+    color: '#5B21B6',
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#9CA3AF',
+    textAlign: 'center',
+    paddingHorizontal: 20,
   },
   transactionItem: {
     backgroundColor: '#E9D5FF',
@@ -329,14 +408,26 @@ const styles = StyleSheet.create({
   amountPositive: {
     color: '#16A34A',
   },
+  verMasButton: {
+    backgroundColor: '#DDD6FE',
+    borderRadius: 16,
+    padding: 16,
+    marginTop: 8,
+    alignItems: 'center',
+  },
+  verMasText: {
+    color: '#7C3AED',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   floatingButton: {
     position: 'absolute',
-    bottom: 130,
+    bottom: 170,
     alignSelf: 'center',
-    backgroundColor: '#3B82F6',
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    backgroundColor: '#60A5FA',
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 8,
@@ -347,7 +438,7 @@ const styles = StyleSheet.create({
   },
   floatingButtonText: {
     color: '#FFFFFF',
-    fontSize: 32,
+    fontSize: 36,
     fontWeight: 'bold',
     marginTop: -2,
   },
@@ -413,9 +504,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
-  },
-  homeButtonActive: {
-    backgroundColor: '#FFFFFF',
   },
   homeIcon: {
     fontSize: 28,

@@ -1,21 +1,29 @@
-import { NavigationContainer } from '@react-navigation/native'; // Importa el contenedor de navegación
-import { createNativeStackNavigator } from '@react-navigation/native-stack'; // Importa el creador de stack navigator
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import Home from '../screens/Home.js'; // Importa la pantalla de Sesión
-import Gastos from '../screens/Gastos.js'; // Importa la pantalla de Sesión
-import Ingresos from '../screens/Ingresos.js'; // Importa la pantalla de Sesión
+import Home from '../screens/Home.js';
+import Gastos from '../screens/Gastos.js';
+import Ingresos from '../screens/Ingresos.js';
+import Calculadora from '../screens/Calculadora.js';
+import CategoriaGastos from '../screens/CategoriaGastos.js';
+import CategoriaIngresos from '../screens/CategoriaIngresos.js';
 
 export default function Navigation() {
-
-  const Stack = createNativeStackNavigator(); // Crea una instancia del stack navigator
+  const Stack = createNativeStackNavigator();
 
   return (
-    <NavigationContainer> 
-      <Stack.Navigator>
-        <Stack.Screen name="Home" component={Home} /> 
-        <Stack.Screen name="Gastos" component={Gastos} /> 
-
-        <Stack.Screen name="Ingresos" component={Ingresos} /> 
+    <NavigationContainer>
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        <Stack.Screen name="Home" component={Home} />
+        <Stack.Screen name="Gastos" component={Gastos} />
+        <Stack.Screen name="Ingresos" component={Ingresos} />
+        <Stack.Screen name="Calculadora" component={Calculadora} />
+        <Stack.Screen name="CategoriaGastos" component={CategoriaGastos} />
+        <Stack.Screen name="CategoriaIngresos" component={CategoriaIngresos} />
       </Stack.Navigator>
     </NavigationContainer>
   );
