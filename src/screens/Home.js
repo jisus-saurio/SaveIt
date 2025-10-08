@@ -7,13 +7,13 @@ import {
   StyleSheet,
   StatusBar,
   ImageBackground,
-  Image
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Svg, { Path } from 'react-native-svg';
+import Header from '../components/Header.js';
+import BottomNav from '../components/BottomNav.js';
 
 const Fondo = require('../../assets/fondo.png');
-const Logo = require('../../assets/saveit.png');
 
 export default function Home({ navigation }) {
   const [activeTab, setActiveTab] = useState('egresos');
@@ -88,18 +88,8 @@ export default function Home({ navigation }) {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#7C3AED" />
       
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <View style={styles.logoContainer}>
-            <Image source={Logo} style={styles.logoImage} resizeMode="contain" />
-            <Text style={styles.headerTitle}>SaveIt</Text>
-          </View>
-          <TouchableOpacity>
-            <Text style={styles.menuIcon}>☰</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      {/* Header Component */}
+      <Header />
 
       {/* Balance Section with Wave */}
       <ImageBackground 
@@ -207,36 +197,8 @@ export default function Home({ navigation }) {
         <Text style={styles.floatingButtonText}>+</Text>
       </TouchableOpacity>
 
-      {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => navigation.navigate('Gastos')}
-        >
-          <Text style={styles.navIcon}>↗</Text>
-          <Text style={styles.navLabel}>Egresos</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.navItemCenter}
-          onPress={() => navigation.navigate('Home')}
-        >
-          <View style={styles.homeButton}>
-            <Text style={styles.homeIcon}>🏠</Text>
-          </View>
-          <Text style={[styles.navLabel, styles.navLabelHome, styles.navLabelActive]}>
-            Home
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => navigation.navigate('Ingresos')}
-        >
-          <Text style={styles.navIcon}>↘</Text>
-          <Text style={styles.navLabel}>Ingresos</Text>
-        </TouchableOpacity>
-      </View>
+      {/* Bottom Navigation Component */}
+      <BottomNav navigation={navigation} activeScreen="Home" />
     </View>
   );
 }
@@ -245,36 +207,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-  },
-  header: {
-    backgroundColor: '#7C3AED',
-    paddingTop: 50,
-    paddingHorizontal: 24,
-    paddingBottom: 16,
-    elevation: 0,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  logoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  logoImage: {
-    width: 35,
-    height: 35,
-  },
-  headerTitle: {
-    color: '#FFFFFF',
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  menuIcon: {
-    color: '#FFFFFF',
-    fontSize: 28,
   },
   balanceSection: {
     position: 'relative',
@@ -441,71 +373,5 @@ const styles = StyleSheet.create({
     fontSize: 36,
     fontWeight: 'bold',
     marginTop: -2,
-  },
-  bottomNav: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#7C3AED',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 40,
-    paddingTop: 12,
-    paddingBottom: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    elevation: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-  },
-  navItem: {
-    alignItems: 'center',
-    gap: 2,
-    flex: 1,
-  },
-  navItemCenter: {
-    alignItems: 'center',
-    gap: 2,
-    marginTop: -40,
-    flex: 1,
-  },
-  navIcon: {
-    fontSize: 24,
-    color: '#C4B5FD',
-  },
-  navIconActive: {
-    color: '#FFFFFF',
-  },
-  navLabel: {
-    color: '#C4B5FD',
-    fontSize: 12,
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  navLabelHome: {
-    marginTop: 6,
-  },
-  navLabelActive: {
-    color: '#FFFFFF',
-  },
-  homeButton: {
-    backgroundColor: '#FFFFFF',
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
-  homeIcon: {
-    fontSize: 28,
   },
 });

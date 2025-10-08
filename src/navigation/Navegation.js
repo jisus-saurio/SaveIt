@@ -1,6 +1,7 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
+import SplashScreen from '../screens/SplashScreen.js';
 import Home from '../screens/Home.js';
 import Gastos from '../screens/Gastos.js';
 import Ingresos from '../screens/Ingresos.js';
@@ -14,10 +15,12 @@ export default function Navigation() {
   return (
     <NavigationContainer>
       <Stack.Navigator
+        initialRouteName="Splash"
         screenOptions={{
           headerShown: false,
         }}
       >
+        <Stack.Screen name="Splash" component={SplashScreen} />
         <Stack.Screen name="Home" component={Home} />
         <Stack.Screen name="Gastos" component={Gastos} />
         <Stack.Screen name="Ingresos" component={Ingresos} />
