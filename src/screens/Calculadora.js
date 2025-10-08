@@ -6,10 +6,13 @@ import {
   TextInput,
   StyleSheet,
   StatusBar,
-  ScrollView
+  ScrollView,
+  Image
 } from 'react-native';
 import Header from '../components/Header.js';
 import BottomNav from '../components/BottomNav.js';
+
+const Logo = require('../../assets/saveit.png');
 
 export default function Calculadora({ navigation, route }) {
   // Detectar si es ingreso o egreso

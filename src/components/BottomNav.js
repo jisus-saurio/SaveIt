@@ -26,61 +26,77 @@ export default function BottomNav({ navigation, activeScreen }) {
   const rotateActive = useRef(new Animated.Value(0)).current;
 
   // Animación del círculo moviéndose
-  const circlePosition = useRef(new Animated.Value(1)).current;
+  const circlePosition = useRef(new Animated.Value(getInitialPosition(activeScreen))).current;
+
+  // Ref para prevenir navegación múltiple
+  const isNavigating = useRef(false);
+
+  // Obtener posición inicial del círculo
+  function getInitialPosition(screen) {
+    switch(screen) {
+      case 'Gastos': return 0;
+      case 'Home': return 1;
+      case 'Ingresos': return 2;
+      default: return 1;
+    }
+  }
 
   useEffect(() => {
     // Animar según la pantalla activa
     if (activeScreen === 'Gastos') {
-      animateCircle(0); // Izquierda
+      animateCircle(0);
       animateElevation(elevationEgresos, -28, elevationHome, 0, elevationIngresos, 0);
       animateIconScale(iconScaleEgresos, 1.3, iconScaleHome, 1, iconScaleIngresos, 1);
       animateRotation();
     } else if (activeScreen === 'Home') {
-      animateCircle(1); // Centro
+      animateCircle(1);
       animateElevation(elevationEgresos, 0, elevationHome, -28, elevationIngresos, 0);
       animateIconScale(iconScaleEgresos, 1, iconScaleHome, 1.3, iconScaleIngresos, 1);
       animateRotation();
     } else if (activeScreen === 'Ingresos') {
-      animateCircle(2); // Derecha
+      animateCircle(2);
       animateElevation(elevationEgresos, 0, elevationHome, 0, elevationIngresos, -28);
       animateIconScale(iconScaleEgresos, 1, iconScaleHome, 1, iconScaleIngresos, 1.3);
       animateRotation();
     } else {
-      // Sin pantalla activa
-      animateCircle(1); // Centro por defecto
+      animateCircle(1);
       animateElevation(elevationEgresos, 0, elevationHome, 0, elevationIngresos, 0);
       animateIconScale(iconScaleEgresos, 1, iconScaleHome, 1, iconScaleIngresos, 1);
     }
+    
+    // Reset del flag cuando la animación termina
+    setTimeout(() => {
+      isNavigating.current = false;
+    }, 200);
   }, [activeScreen]);
 
   const animateCircle = (position) => {
     Animated.spring(circlePosition, {
       toValue: position,
-      friction: 8,
-      tension: 50,
+      friction: 5,
+      tension: 100,
       useNativeDriver: true,
     }).start();
   };
-  
 
   const animateElevation = (anim1, val1, anim2, val2, anim3, val3) => {
     Animated.parallel([
       Animated.spring(anim1, {
         toValue: val1,
-        friction: 8,
-        tension: 40,
+        friction: 6,
+        tension: 80,
         useNativeDriver: true,
       }),
       Animated.spring(anim2, {
         toValue: val2,
-        friction: 8,
-        tension: 40,
+        friction: 6,
+        tension: 80,
         useNativeDriver: true,
       }),
       Animated.spring(anim3, {
         toValue: val3,
-        friction: 8,
-        tension: 40,
+        friction: 6,
+        tension: 80,
         useNativeDriver: true,
       }),
     ]).start();
@@ -90,20 +106,20 @@ export default function BottomNav({ navigation, activeScreen }) {
     Animated.parallel([
       Animated.spring(anim1, {
         toValue: val1,
-        friction: 7,
-        tension: 40,
+        friction: 5,
+        tension: 80,
         useNativeDriver: true,
       }),
       Animated.spring(anim2, {
         toValue: val2,
-        friction: 7,
-        tension: 40,
+        friction: 5,
+        tension: 80,
         useNativeDriver: true,
       }),
       Animated.spring(anim3, {
         toValue: val3,
-        friction: 7,
-        tension: 40,
+        friction: 5,
+        tension: 80,
         useNativeDriver: true,
       }),
     ]).start();
@@ -113,15 +129,16 @@ export default function BottomNav({ navigation, activeScreen }) {
     rotateActive.setValue(0);
     Animated.timing(rotateActive, {
       toValue: 1,
-      duration: 400,
+      duration: 250,
       useNativeDriver: true,
     }).start();
   };
 
   const handlePressIn = (scale) => {
     Animated.spring(scale, {
-      toValue: 0.9,
-      friction: 5,
+      toValue: 0.92,
+      friction: 4,
+      tension: 150,
       useNativeDriver: true,
     }).start();
   };
@@ -129,9 +146,31 @@ export default function BottomNav({ navigation, activeScreen }) {
   const handlePressOut = (scale) => {
     Animated.spring(scale, {
       toValue: 1,
-      friction: 5,
+      friction: 4,
+      tension: 150,
       useNativeDriver: true,
     }).start();
+  };
+
+  // Función mejorada para navegar con animación previa
+  const handleNavigate = (screenName, targetPosition) => {
+    // No hacer nada si ya estamos navegando o estamos en esa pantalla
+    if (isNavigating.current || activeScreen === screenName) return;
+    
+    isNavigating.current = true;
+
+    // Primero animar el círculo y los iconos (más rápido)
+    Animated.parallel([
+      Animated.spring(circlePosition, {
+        toValue: targetPosition,
+        friction: 5,
+        tension: 100,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      // Después de la animación del círculo, navegar inmediatamente
+      navigation.navigate(screenName);
+    });
   };
 
   const rotation = rotateActive.interpolate({
@@ -171,7 +210,7 @@ export default function BottomNav({ navigation, activeScreen }) {
       >
         <TouchableOpacity
           style={styles.navItem}
-          onPress={() => navigation.navigate('Gastos')}
+          onPress={() => handleNavigate('Gastos', 0)}
           onPressIn={() => handlePressIn(scaleEgresos)}
           onPressOut={() => handlePressOut(scaleEgresos)}
           activeOpacity={1}
@@ -216,7 +255,7 @@ export default function BottomNav({ navigation, activeScreen }) {
       >
         <TouchableOpacity
           style={styles.navItem}
-          onPress={() => navigation.navigate('Home')}
+          onPress={() => handleNavigate('Home', 1)}
           onPressIn={() => handlePressIn(scaleHome)}
           onPressOut={() => handlePressOut(scaleHome)}
           activeOpacity={1}
@@ -261,7 +300,7 @@ export default function BottomNav({ navigation, activeScreen }) {
       >
         <TouchableOpacity
           style={styles.navItem}
-          onPress={() => navigation.navigate('Ingresos')}
+          onPress={() => handleNavigate('Ingresos', 2)}
           onPressIn={() => handlePressIn(scaleIngresos)}
           onPressOut={() => handlePressOut(scaleIngresos)}
           activeOpacity={1}
@@ -330,7 +369,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.6,
     shadowRadius: 12,
     elevation: 8,
-    
   },
   navItemContainer: {
     flex: 1,
